@@ -69,6 +69,12 @@ def tool(fn):
 
 
 @tool
+def sg_doctor() -> dict:
+    """Full configuration check: Python, packages, SnapGene paths/licence, and which command groups work."""
+    return api.doctor()
+
+
+@tool
 def sg_status() -> dict:
     """Report whether SnapGene and its bundled tools are available."""
     return api.status()

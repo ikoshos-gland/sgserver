@@ -27,7 +27,8 @@ Requires Python ≥ 3.12. Then:
 
 ```bash
 sg --help
-sg --json status
+sg conf                # check installation & active capabilities (alias: sg doctor)
+sg --json conf
 ```
 
 ## Quick start
@@ -72,7 +73,7 @@ Both sites are recreated and the downstream SalI/HindIII sites survive.
 | Editing | `annotate`, `mutate`, `origin`, `flip`, `feature` |
 | Validation | `verify`, `methyl`, `guides` |
 | Alignment | `align` |
-| Other | `status` |
+| Setup | `doctor` (alias: `conf`), `status` |
 
 Cloning methods: `restriction`, `goldengate`, `gibson`, `infusion`,
 `ligation`, `gateway-bp`, `gateway-lr`.

@@ -13,9 +13,32 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from pydna.dseqrecord import Dseqrecord
 
-SNAPGENE_DIR = Path(os.environ.get("SNAPGENE_DIR", "/opt/gslbiotech/snapgene"))
-SNAPGENE_BIN = SNAPGENE_DIR / "snapgene.sh"
-TOOLS = SNAPGENE_DIR / "resources" / "Tools"
+def _default_snapgene_dir() -> Path:
+    if sys.platform == "darwin":
+        return Path("/Applications/SnapGene.app/Contents")
+    if sys.platform == "win32":
+        prog = os.environ.get("ProgramFiles", r"C:\Program Files")
+        return Path(prog) / "GSL Biotech" / "SnapGene"
+    return Path("/opt/gslbiotech/snapgene")
+
+
+def _snapgene_bin(base: Path) -> Path:
+    for rel in ("snapgene.sh", "MacOS/SnapGene", "snapgene.exe", "snapgene"):
+        cand = base / rel
+        if cand.exists():
+            return cand
+    if sys.platform == "darwin":
+        return base / "MacOS" / "SnapGene"
+    if sys.platform == "win32":
+        return base / "snapgene.exe"
+    return base / "snapgene.sh"
+
+
+SNAPGENE_DIR = Path(os.environ.get("SNAPGENE_DIR") or _default_snapgene_dir())
+SNAPGENE_BIN = _snapgene_bin(SNAPGENE_DIR)
+TOOLS = (SNAPGENE_DIR / "Resources" / "Tools"
+         if (SNAPGENE_DIR / "Resources" / "Tools").exists()
+         else SNAPGENE_DIR / "resources" / "Tools")
 
 EXT_FORMAT = {
     ".dna": "snapgene",

@@ -53,8 +53,9 @@ Validation
 Alignment
   align     multiple alignment (clustalo / muscle)
 
-Other
-  status    what is available on this machine
+Setup
+  doctor    check the installation and list what works (alias: conf)
+  status    short availability summary
 """
 
 
@@ -274,6 +275,23 @@ def _t_align(r, a):
     return r["alignment"]
 
 
+_MARK = {"ok": "✓", "warn": "!", "fail": "✗"}
+
+
+def _t_doctor(r, a):
+    lines = ["sgserver configuration check", ""]
+    for c in r["checks"]:
+        lines.append(f"  {_MARK[c['status']]} {c['name']:<22} {c['detail']}")
+        if c["fix"]:
+            lines.append(f"      → {c['fix']}")
+    lines += ["", "Available:"]
+    for name, ok in r["capabilities"].items():
+        lines.append(f"  {'✓' if ok else '✗'} {name}")
+    lines.append("")
+    lines.append("Result: " + ("core OK" if r["ok"] else "PROBLEMS FOUND — see ✗ above"))
+    return "\n".join(lines)
+
+
 def _t_file(label):
     return lambda r, a: f"{label}: {r['file']}"
 
@@ -327,6 +345,7 @@ COMMANDS = {
     "guides": (lambda a: api.guides(a.file, a.pam, a.length, a.gc_min, a.gc_max, a.limit),
                _t_guides),
     "align": (lambda a: api.align(a.file, a.program, a.out), _t_align),
+    "doctor": (lambda a: api.doctor(), _t_doctor),
     "status": (lambda a: api.status(),
                lambda r, a: "\n".join(f"{k}: {v}" for k, v in r.items())),
 }
@@ -348,8 +367,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="print machine-readable JSON (errors as {\"error\": ...})")
     sub = p.add_subparsers(dest="cmd")
 
-    def add(name, help_):
-        s = sub.add_parser(name, help=help_)
+    def add(name, help_, aliases=()):
+        s = sub.add_parser(name, aliases=list(aliases), help=help_)
         s.set_defaults(cmd=name)
         return s
 
@@ -492,6 +511,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--program", default="clustalo", choices=["clustalo", "muscle"])
     s.add_argument("--out")
 
+    add("doctor", "check the installation and list what works", aliases=("conf",))
     add("status", "what is available on this machine")
     return p
 
@@ -515,7 +535,7 @@ def main(argv=None) -> int:
         return 130
     print(json.dumps(result, ensure_ascii=False, indent=2) if args.json
           else render(result, args))
-    return 0
+    return 0 if args.cmd != "doctor" or result["ok"] else 2
 
 
 if __name__ == "__main__":

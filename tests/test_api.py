@@ -177,3 +177,11 @@ def test_status_does_not_require_snapgene(capsys):
     code, out, _ = _run(capsys, "--json", "status")
     assert code == 0
     assert "snapgene_available" in json.loads(out)
+
+
+def test_doctor_and_conf_alias(capsys):
+    code, out, _ = _run(capsys, "--json", "conf")
+    assert code == 0
+    data = json.loads(out)
+    assert data["ok"] is True
+    assert "capabilities" in data and "checks" in data

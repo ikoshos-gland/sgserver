@@ -1,13 +1,23 @@
 ---
 name: sgserver
-description: Work with DNA/plasmid sequence files like SnapGene does — inspect, find restriction sites, digest, clone (restriction, Golden Gate, Gibson), run in-silico PCR, design primers, edit sequences, auto-annotate features, verify sequencing reads, find CRISPR guides. Use when the user mentions plasmids, cloning, primers, digests, SnapGene, .dna/.gb/.fasta files.
+description: Work with DNA/plasmid sequence files like SnapGene does — inspect, find restriction sites, digest, clone (restriction, Golden Gate, Gibson), run in-silico PCR, design primers, edit sequences, auto-annotate features, verify sequencing reads, find CRISPR guides. Use when the user mentions plasmids, cloning, primers, digests, SnapGene, .dna/.gb/.fasta files, or "/conf".
 ---
 
 # sgserver
 
-Two ways to use it. Prefer MCP tools if the `sgserver` MCP server is connected
-(`sg_info`, `sg_digest`, `sg_clone`, ...); otherwise call the CLI with `--json`
-so results are machine-readable:
+## Step 0 — Run configuration check (`sg conf`)
+Before your first command in a session (or whenever the user asks `/conf` or to check setup), verify what is installed and which capabilities are active on this machine:
+
+- **MCP:** call `sg_doctor()`
+- **CLI:**
+  ```bash
+  sg --json conf
+  ```
+
+`capabilities` in the output tells you whether SnapGene-specific features (`.dna` writing, `map`, `history`, `annotate`, `fold`, `align`) are available or if you should stick to the SnapGene-free core (`.gb`/`.fasta`, `info`, `sites`, `digest`, `clone`, `pcr`, `primers`, `mutate`, `verify`, `guides`, `methyl`, `gel`). If anything is missing, `next_steps` gives the exact fix command.
+
+## Calling conventions
+Prefer MCP tools if the `sgserver` MCP server is connected (`sg_doctor`, `sg_info`, `sg_digest`, `sg_clone`, ...); otherwise call the CLI with `--json` so results are machine-readable:
 
 ```bash
 sg --json <command> <args>     # --json goes BEFORE the command
@@ -15,15 +25,12 @@ sg --json <command> <args>     # --json goes BEFORE the command
 
 Errors come back as `{"error": "..."}` with exit code 1.
 
-## Conventions
 - Positions are **1-based and inclusive**. `strand` is `1` or `-1`.
-- `.dna` read/write and `map`, `history`, `fold`, `align` need a SnapGene
-  install (`SNAPGENE_DIR`, default `/opt/gslbiotech/snapgene`). Check with
-  `sg --json status`. Everything else works without it using `.gb`/`.fasta`.
 
 ## Common tasks
 | Goal | CLI |
 |---|---|
+| Check setup & capabilities | `sg --json conf` (or `sg doctor`) |
 | Overview | `sg --json info plasmid.gb` |
 | Unique cutters | `sg --json sites plasmid.gb --max-cuts 1` |
 | Digest | `sg --json digest plasmid.gb -e EcoRI -e BamHI` |
@@ -44,5 +51,5 @@ Errors come back as `{"error": "..."}` with exit code 1.
 3. A methylation `status` of `overlap` is only a warning; `blocked` /
    `unaffected` / `required` are known cases (e.g. BamHI is *unaffected* by Dam).
 4. If the SnapGene window is open, `convert`, `map` and `history` may silently
-   do nothing — ask the user to close it.
+   do nothing — `sg conf` warns about this; ask the user to close it.
 5. Auto-annotation uses SnapGene's feature database, so it needs SnapGene installed.

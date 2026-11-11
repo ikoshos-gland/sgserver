@@ -439,3 +439,86 @@ def status() -> dict:
         "snapgene_dir": str(SNAPGENE_DIR),
         "bundled_tools": TOOLS.exists(),
     }
+
+
+def doctor() -> dict:
+    """Check the installation and report which commands are usable.
+
+    Each check is {name, status: ok|warn|fail, detail, fix}. ``ok`` overall
+    means the SnapGene-free core works; ``capabilities`` says which command
+    groups are available on this machine.
+    """
+    import importlib.metadata as md
+    import os
+    import platform
+    import sys
+
+    from .core import SNAPGENE_BIN, SNAPGENE_DIR, TOOLS, gui_running
+
+    checks: list[dict] = []
+
+    def add(name, status, detail, fix=""):
+        checks.append({"name": name, "status": status, "detail": detail, "fix": fix})
+
+    add("platform", "ok", f"{platform.system()} {platform.machine()}, Python {platform.python_version()}")
+    if sys.version_info < (3, 12):
+        add("python", "fail", f"Python {platform.python_version()} (needs >= 3.12)",
+            "Install Python 3.12+ (uv python install 3.12)")
+
+    for pkg in ("biopython", "pydna", "primer3-py", "matplotlib"):
+        try:
+            add(f"dep:{pkg}", "ok", md.version(pkg))
+        except md.PackageNotFoundError:
+            add(f"dep:{pkg}", "fail", "not installed", f"pip install {pkg}")
+    try:
+        add("dep:mcp", "ok", md.version("mcp"))
+    except md.PackageNotFoundError:
+        add("dep:mcp", "warn", "not installed (only needed for sg-mcp)",
+            'pip install "sgserver[mcp]"')
+
+    sg_dir_ok = SNAPGENE_DIR.exists()
+    add("snapgene:dir", "ok" if sg_dir_ok else "warn",
+        str(SNAPGENE_DIR) if sg_dir_ok else f"not found: {SNAPGENE_DIR}",
+        "" if sg_dir_ok else "Install SnapGene or set SNAPGENE_DIR (optional)")
+    cli_ok = SNAPGENE_BIN.exists()
+    if sg_dir_ok:
+        add("snapgene:cli", "ok" if cli_ok else "warn",
+            str(SNAPGENE_BIN) if cli_ok else f"launcher not found: {SNAPGENE_BIN}",
+            "" if cli_ok else "Check SNAPGENE_DIR points at the SnapGene install folder")
+    lic = Path.home() / ".snapgene" / "snapgene-license.lic"
+    lic_ok = lic.exists()
+    if sg_dir_ok:
+        add("snapgene:license", "ok" if lic_ok else "warn",
+            str(lic) if lic_ok else f"missing: {lic}",
+            "" if lic_ok else "Activate SnapGene once, or copy your licence file there")
+    tools_ok = TOOLS.exists()
+    if sg_dir_ok:
+        add("snapgene:tools", "ok" if tools_ok else "warn",
+            ", ".join(sorted(p.name for p in TOOLS.iterdir())) if tools_ok
+            else f"missing: {TOOLS}")
+    ftrs = SNAPGENE_DIR / "resources" / "standardCommonFeatures.ftrs"
+    ftrs_ok = ftrs.exists()
+    if sg_dir_ok:
+        add("snapgene:feature-db", "ok" if ftrs_ok else "warn",
+            str(ftrs) if ftrs_ok else f"missing: {ftrs}")
+    if cli_ok and gui_running():
+        add("snapgene:window", "warn", "the SnapGene window is open",
+            "Close it: while open, convert/map/history may silently do nothing")
+
+    add("mcp:root", "ok", os.environ.get("SG_MCP_ROOT", f"{Path.cwd()} (default: current directory)"))
+
+    core_ok = not any(c["status"] == "fail" for c in checks)
+    snap = cli_ok and lic_ok
+    capabilities = {
+        "core (info, sites, digest, clone, pcr, primers, mutate, verify, guides, methyl, gel)": core_ok,
+        "write/convert .dna, map, history": snap,
+        "annotate (feature database)": ftrs_ok,
+        "fold, align (bundled tools)": tools_ok,
+        "mcp server": any(c["name"] == "dep:mcp" and c["status"] == "ok" for c in checks),
+    }
+    return {
+        "ok": core_ok,
+        "checks": checks,
+        "capabilities": capabilities,
+        "next_steps": [c["fix"] for c in checks if c["fix"]],
+    }
