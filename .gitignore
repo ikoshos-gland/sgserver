@@ -15,4 +15,3 @@ wheels/
 *.png
 !docs/*.png
 .pytest_cache/
-.github/
