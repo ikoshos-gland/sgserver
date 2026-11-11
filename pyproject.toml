@@ -1,0 +1,49 @@
+[project]
+name = "sgserver"
+version = "0.1.0"
+description = "Command-line toolkit and MCP server for SnapGene-style DNA work: digest, clone, PCR, primers, annotate, verify. Built for humans and AI agents."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["snapgene", "molecular-biology", "cloning", "plasmid", "primer", "crispr", "mcp", "agents"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3.12",
+]
+authors = [
+    { name = "ikoshos-gland", email = "fatih.mertkoca2@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "biopython>=1.88",
+    "matplotlib>=3.11.2",
+    "primer3-py>=2.4.0",
+    "pydna>=5.5.16",
+]
+
+[project.scripts]
+sg = "sgserver.cli:main"
+sg-mcp = "sgserver.mcp_server:main"
+
+[project.urls]
+Homepage = "https://github.com/ikoshos-gland/sgserver"
+Issues = "https://github.com/ikoshos-gland/sgserver/issues"
+
+[project.optional-dependencies]
+mcp = [
+    "mcp>=1.2,<2",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
