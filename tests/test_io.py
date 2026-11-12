@@ -12,7 +12,6 @@ from tests.conftest import (
     requires_snapgene_cli,
 )
 
-pytestmark = requires_samples
 
 
 def test_snapgene_file_is_read(pIB2):
@@ -38,6 +37,7 @@ def test_circular_flag_is_preserved(tmp_path, pIB2):
     assert str(again.seq).upper() == str(pIB2.seq).upper()
 
 
+@requires_samples
 def test_linear_stays_linear(tmp_path):
     rec = load(DNA_FILES / "Fluorescent Protein Genes" / "mCherry.dna")
     assert not rec.circular
@@ -72,6 +72,7 @@ def test_missing_file_raises(tmp_path):
         load(tmp_path / "missing.gb")
 
 
+@requires_samples
 def test_multi_record_file(tmp_path):
     from Bio.SeqIO import write
 

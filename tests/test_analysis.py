@@ -8,7 +8,6 @@ from sgserver import analyze
 from sgserver.core import SgError
 from tests.conftest import requires_samples
 
-pytestmark = requires_samples
 
 
 # --------------------------------------------------------------------------

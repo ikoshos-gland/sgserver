@@ -5,11 +5,11 @@ from __future__ import annotations
 import pytest
 from Bio.Seq import Seq
 
-from conftest import ANNOTATE, DESIGN, labels, requires_samples, same_circle
+from conftest import (ANNOTATE, DESIGN, labels, requires_bundled_tools,
+                      requires_samples, same_circle)
 from sgserver import annotate, edit, methyl, pcr, verify
 from sgserver.core import SgError, load, revcomp
 
-pytestmark = requires_samples
 
 
 def _ampr(rec):
@@ -42,6 +42,7 @@ def test_designed_primers_amplify_the_region(pUC19):
     assert str(amp.seq).upper() == str(pUC19.seq)[145:468].upper()
 
 
+@requires_samples
 def test_gfp_pcr_matches_snapgene_amplicon_length():
     """Full-length PCR on the GFP template (SnapGene's PCR sample project)."""
     template = load(DESIGN / "1. PCR" / "1. GFP.dna")
@@ -70,6 +71,7 @@ def test_non_annealing_primer_raises(pUC19):
         pcr.amplify(pUC19, "A" * 25, "C" * 25)
 
 
+@requires_bundled_tools
 def test_folding_gives_a_negative_energy():
     struct, dg = pcr.fold("GGGAAACCCTTTGGGAAACCC")
     assert len(struct) == 21 and set(struct) <= set("().")

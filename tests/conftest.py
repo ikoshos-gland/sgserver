@@ -54,14 +54,22 @@ def labels(rec) -> dict[str, tuple[int, int]]:
 
 @pytest.fixture(scope="session")
 def feature_db():
-    """Common-feature database — loaded once and shared (slow)."""
-    from sgserver.annotate import load_database
+    """Common-feature database — loaded once and shared (slow).
 
+    It is read from the SnapGene installation, so it is unavailable when
+    SnapGene is not installed (e.g. on CI).
+    """
+    from sgserver.annotate import FTRS_PATH, load_database
+
+    if not FTRS_PATH.exists():
+        pytest.skip("SnapGene feature database is not installed")
     return load_database()
 
 
 @pytest.fixture
 def pIB2():
+    if not SAMPLES.exists():
+        pytest.skip("SnapGene sample files are not installed")
     from sgserver.core import load
 
     return load(SAMPLES / "pIB2-SEC13-mEGFP.dna")
@@ -69,6 +77,14 @@ def pIB2():
 
 @pytest.fixture
 def pUC19():
+    if not SAMPLES.exists():
+        pytest.skip("SnapGene sample files are not installed")
     from sgserver.core import load
 
     return load(DNA_FILES / "Basic Cloning Vectors" / "pUC19.dna")
+
+
+requires_bundled_tools = pytest.mark.skipif(
+    not (SNAPGENE / "resources" / "Tools").exists(),
+    reason="SnapGene's bundled tools (ViennaRNA, clustalo, ...) are not installed",
+)

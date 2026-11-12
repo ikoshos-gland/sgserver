@@ -12,7 +12,6 @@ from sgserver import analyze, clone, pcr
 from sgserver.core import SgError, load, save
 from tests.conftest import DESIGN, DNA_FILES, requires_samples, same_circle
 
-pytestmark = requires_samples
 
 RESTRICTION = DESIGN / "2. Restriction Cloning"
 GOLDEN_GATE = DESIGN / "3. Golden Gate Assembly"
@@ -23,6 +22,7 @@ GOLDEN_GATE = DESIGN / "3. Golden Gate Assembly"
 # --------------------------------------------------------------------------
 
 
+@requires_samples
 def test_restriction_cloning_matches_snapgene():
     """pUC57 + mTAGBFP2 (SalI/KpnI) → pUC57-mTAGBFP2, 3387 bp."""
     vector = load(RESTRICTION / "1. pUC57.dna")
@@ -38,6 +38,7 @@ def test_restriction_cloning_matches_snapgene():
     )
 
 
+@requires_samples
 def test_golden_gate_matches_snapgene():
     """pGGA + mCherry (BsaI) → pGGA-mCherry, 2848 bp, a single product."""
     vector = load(GOLDEN_GATE / "1. pGGA.dna")
@@ -50,6 +51,7 @@ def test_golden_gate_matches_snapgene():
     assert products[0].circular
 
 
+@requires_samples
 def test_golden_gate_consumes_the_sites():
     """BsaI sites must not remain in the product (the cut is outside the site)."""
     vector = load(GOLDEN_GATE / "1. pGGA.dna")
