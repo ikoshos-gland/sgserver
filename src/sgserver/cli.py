@@ -516,7 +516,23 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _use_utf8_output() -> None:
+    """Make stdout/stderr able to carry the characters the reports use.
+
+    Windows defaults to the legacy code page (cp1252), which cannot encode
+    the arrows, degree signs and check marks in the output, so printing
+    raised UnicodeEncodeError and `sg conf` crashed there. ``errors=replace``
+    keeps the process alive on any console that still cannot render a glyph.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass  # redirected or already-wrapped stream: leave it alone
+
+
 def main(argv=None) -> int:
+    _use_utf8_output()
     parser = build_parser()
     args = parser.parse_args(argv)
     if not args.cmd:

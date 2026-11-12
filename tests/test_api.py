@@ -6,6 +6,7 @@ They use a small synthetic plasmid built on the fly, so they run anywhere
 
 from __future__ import annotations
 
+import os
 import json
 import random
 
@@ -185,3 +186,25 @@ def test_doctor_and_conf_alias(capsys):
     data = json.loads(out)
     assert data["ok"] is True
     assert "capabilities" in data and "checks" in data
+
+
+def test_text_output_survives_a_legacy_codepage(tmp_path):
+    """Regression: `sg conf` crashed on Windows (cp1252) with UnicodeEncodeError.
+
+    The reports contain characters the legacy Windows code page cannot encode
+    (✓ → Δ ≥ °). CI was red on windows-latest and, because the step failed,
+    the Windows test run never happened. main() now forces UTF-8 output.
+    """
+    import subprocess
+    import sys
+
+    env = {**os.environ, "PYTHONIOENCODING": "cp1252"}
+    out = tmp_path / "conf.txt"
+    with out.open("wb") as fh:
+        code = subprocess.call(
+            [sys.executable, "-c",
+             "from sgserver.cli import main; raise SystemExit(main(['conf']))"],
+            stdout=fh, stderr=subprocess.STDOUT, env=env,
+        )
+    assert code in (0, 2), out.read_text(encoding="utf-8", errors="replace")[-500:]
+    assert "UnicodeEncodeError" not in out.read_text(encoding="utf-8", errors="replace")
